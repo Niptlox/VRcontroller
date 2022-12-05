@@ -1,8 +1,9 @@
 from VrController import VrController
+import VR_points
 from websocket_async import WebSocketClient
 import math
 import pygame as pg
-from Py3DEngine.app import SkeletonRotate, Angle3, World, SystemCoord, Vector3, Player, Camera
+from Py3DEngine.app import SkeletonRotate, Angle3, World, SystemCoord, Vector3, Player, Camera, WallCube
 
 from Py3DEngine.settings import WINDOW_SIZE, FPS
 from Py3DEngine.ObjReader import open_file_obj
@@ -11,24 +12,44 @@ import threading
 
 data_queue = Queue()
 
+MAIN_MODEL_IS_RECT = True
+
+
+class ModelController:
+    def __init__(self):
+        pass
+
 
 class App:
-    def __init__(self):
+    def __init__(self, run=True):
         pg.init()
         pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode(WINDOW_SIZE)
         self.clock = pg.time.Clock()
         self.font = pg.font.SysFont("", 20)
+        if MAIN_MODEL_IS_RECT:
+            self.model = SkeletonRotate(*open_file_obj("rect.obj", (5, 5, 5), _convert_faces_to_lines=True),
+                                        rotation=Angle3(math.pi / 2, 0, 0))
+        else:
+            self.model = SkeletonRotate(*open_file_obj("controllerVR.obj", (5, 5, 5), _convert_faces_to_lines=True),
+                                        rotation=Angle3(math.pi / 2, 0, 0))
+        self.player = SkeletonRotate(*open_file_obj("man.obj", (1, 1, 1), _convert_faces_to_lines=True),
+                                     rotation=Angle3(math.pi / 2, 0, 0))
 
-        self.model = SkeletonRotate(*open_file_obj("controllerVR.obj", (7, 7, 7), _convert_faces_to_lines=True),
-                                    rotation=Angle3(math.pi / 2, 0, 0))
-        self.world = World([SystemCoord(Vector3(0, 0, 0), 0), self.model])
+        cubes = []
+        cube_size = 10
+        for i in range(10):
+            cubes.append(WallCube(Vector3(-30 + 30 * i, -140, 0), cube_size, cube_size), )
+
+        self.world = World([SystemCoord(Vector3(0, 0, 0), 100), self.model, ] + cubes)
         self.player = Player(Vector3(-00, 132, 14), rotation=Angle3(0.0, 0, math.pi), mouse_control=0)
         self.player.set_world(self.world)
         self.camera = Camera(self.player, WINDOW_SIZE)
-        self.vr_controller = VrController(self.set_angle, on_down_button=self.down_button)
+        self.vr_controller = VrController(Vector3(self.model.position), self.set_angle, self.set_pos,
+                                          on_down_button=self.down_button)
         self.running = True
-        self.run()
+        if run:
+            self.run()
 
     def down_button(self, buttons):
 
@@ -40,10 +61,10 @@ class App:
 
     def render_loop(self):
         while self.running:
+            elapsed_time = self.clock.tick(FPS)
             while data_queue.qsize():
                 data = data_queue.get()
-                self.vr_controller.NewMsg(data)
-            elapsed_time = self.clock.tick(FPS)
+                self.vr_controller.NewMsg(data, elapsed_time)
 
             self.screen.fill("#000000")
             for event in pg.event.get():
@@ -64,8 +85,16 @@ class App:
 
     def set_angle(self, angle):
         # print(angle)
-        angle += Angle3(math.pi/2, 0, 0)
+        angle += Angle3(math.pi / 2, 0, 0)
         self.model.rotation = Angle3(angle.x, angle.z, -angle.y)
+
+    def set_pos(self, pos):
+        # print(angle)
+        pass
+        self.model.position = Angle3(pos.x, pos.z, pos.y)
+
+    def new_accel(self, accel):
+        accel
 
 
 async def new_msg(msg):

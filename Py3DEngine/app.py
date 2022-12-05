@@ -1,3 +1,4 @@
+
 from logging import debug
 from random import randint
 from typing import List
@@ -165,6 +166,9 @@ class SystemCoord(ObjectGroup):
             Line(position - Vector3(size, 0, 0), Vector3(size, 0, 0), GREEN),
             Line(position - Vector3(0, size, 0), Vector3(0, size, 0), RED),
             Line(position - Vector3(0, 0, size), Vector3(0, 0, size), BLUE),
+            Point(Vector3(size, 0, 0), WHITE),
+            Point(Vector3(0, size, 0), WHITE),
+            Point(Vector3(0, 0, size), WHITE),
             Point(position, self.color),
 
         ])
@@ -214,8 +218,9 @@ class PointsRotate(Points):
 
 
 class SkeletonRotate(PointsRotate):
-    def __init__(self, vertexes, edges, rotation, color=WHITE):
+    def __init__(self, vertexes, edges, faces, rotation, color=WHITE):
         self.edges = edges
+        self.faces = faces
         super(SkeletonRotate, self).__init__(vertexes, rotation, color)
 
     def draw(self, surface, lst_pos2d_light):

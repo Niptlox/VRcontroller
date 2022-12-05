@@ -33,10 +33,12 @@ class StackAvg:
 
 
 class VrController:
-    def __init__(self, on_new_angle, on_down_button=None):
+    def __init__(self, position, on_new_angle, on_new_pos, on_down_button=None):
         self.accel_center = [Vector3(), Vector3()]
+        self.position = position
         self.gyroNow = Vector3()
         self.gyroOffset = Vector3()
+        self.accelOffset = Vector3()
         self.accelAngle = Vector3()
         self.gyroData = [Vector3(), Vector3()]
         self.accelData = [Vector3(), Vector3()]
@@ -47,6 +49,7 @@ class VrController:
         self.zDotSumCnt = 16
         self.zDotSumI = 0
         self.on_new_angle = on_new_angle
+        self.on_new_pos = on_new_pos
         self.on_down_button = on_down_button
 
     def resetGyro(self):
@@ -55,6 +58,7 @@ class VrController:
 
     def Calibrate(self):
         self.gyroOffset.xyz = (self.gyroData[self.iterV3].x, self.gyroData[self.iterV3].y, self.gyroData[self.iterV3].z)
+        self.accelOffset.xyz = (self.accelData[self.iterV3].x, self.accelData[self.iterV3].y, self.accelData[self.iterV3].z)
         self.resetGyro()
 
     def VecToStr(self, vec):
@@ -73,7 +77,24 @@ class VrController:
             return math.atan((y / x) if x != 0 else 0) * 180 / math.pi - 90 + (
                 (-180 if x < 0 else 90) if y < 0 else (-180 if x < 0 else 0))
 
-    def NewMsg(self, st: str):
+    def CalculatePosition(self, degAngle, elapsed_time):
+        # TODO: Надо пересчитать скорость
+        # ускорение self.accelData[self.iterV3]
+        # уголовая скорость self.gyroData[self.iterV3]
+        vecNG = Vector3(0, -self.accelOffset.z, 0)
+
+        vecNG.rotate_x_ip(-degAngle.x)
+        vecNG.rotate_y_ip(-degAngle.y)
+        vecNG.rotate_z_ip(-degAngle.z)
+        accelNow = self.accelAvgStack.avg() - vecNG
+        self.position += accelNow * elapsed_time
+
+        # self.on_new_pos(self.position)
+
+
+
+
+    def NewMsg(self, st: str, elapsed_time):
 
         oldIterV3 = self.iterV3
         splitAr = st.split(";")
@@ -114,6 +135,8 @@ class VrController:
         degAngle = Vector3(self.angleTan(accelAvg.x, accelAvg.z), -self.gyroNow.z * math.pi,
                            self.angleTan(accelAvg.y, accelAvg.z))
         self.on_new_angle(degAngle / 180 * math.pi);
+        self.CalculatePosition(degAngle, elapsed_time)
+
         return degAngle
 
     def reset(self):

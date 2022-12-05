@@ -6,6 +6,8 @@ def rotation_matrix(axis, theta):
     """
     Return the rotation matrix associated with counterclockwise rotation about
     the given axis by theta radians.
+    Возвращает матрицу вращения, связанную с вращением против часовой стрелки вокруг
+    заданной оси в тета-радианах.
     """
     axis = np.asarray(axis)
     axis = axis / math.sqrt(np.dot(axis, axis))
@@ -17,8 +19,8 @@ def rotation_matrix(axis, theta):
                      [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
                      [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     v = [3, 5, 0]
     axis = [4, 4, 1]
     theta = 1.2
