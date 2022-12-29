@@ -33,7 +33,7 @@ class StackAvg:
 
 
 class VrController:
-    def __init__(self, position, on_new_angle, on_new_pos, on_down_button=None):
+    def __init__(self, position, on_new_angle, on_new_pos, on_new_accel, on_down_button=None):
         self.accel_center = [Vector3(), Vector3()]
         self.position = position
         self.gyroNow = Vector3()
@@ -50,6 +50,7 @@ class VrController:
         self.zDotSumI = 0
         self.on_new_angle = on_new_angle
         self.on_new_pos = on_new_pos
+        self.on_new_accel = on_new_accel
         self.on_down_button = on_down_button
 
     def resetGyro(self):
@@ -96,7 +97,7 @@ class VrController:
 
     def NewMsg(self, st: str, elapsed_time):
 
-        oldIterV3 = self.iterV3
+        # oldIterV3 = self.iterV3
         splitAr = st.split(";")
         n = len(splitAr) - 1
         if (n < 6):
@@ -104,7 +105,7 @@ class VrController:
         m = [float(el) for el in splitAr if el]
         # print(m)
 
-        if (self.iterV3 != -1):
+        if self.iterV3 != -1:
             self.iterV3 ^= 1
         else:
             self.iterV3 = 0
@@ -131,6 +132,7 @@ class VrController:
             self.zDotSumI += 1;
 
         accelAvg = self.accelAvgStack.avg()
+        self.on_new_accel(accelAvg)
         # print(accelAvg)
         degAngle = Vector3(self.angleTan(accelAvg.x, accelAvg.z), -self.gyroNow.z * math.pi,
                            self.angleTan(accelAvg.y, accelAvg.z))

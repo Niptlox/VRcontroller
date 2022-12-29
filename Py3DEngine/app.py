@@ -1,4 +1,3 @@
-
 from logging import debug
 from random import randint
 from typing import List
@@ -10,7 +9,6 @@ from Py3DEngine.settings import *
 from Py3DEngine.Drawing import *
 
 WINDOW_RECT = pg.Rect((-W_WIDTH, -W_HEIGHT), (W_WIDTH * 3, W_HEIGHT * 3))
-
 
 
 def get_color_of_light(color, light):
@@ -35,7 +33,7 @@ class Angle3(pg.Vector3):
 
 class Object:
     def __init__(self, position: Vector3 = Vector3.zero(), rotation: Angle3 = Angle3.zero()):
-        self.position = Vector3(position)
+        self.position = Vector3(position) if position is not None else None
         self.rotation = Angle3(rotation)
         self.color = WHITE
 
@@ -46,8 +44,21 @@ class ObjectGroup(Object):
             pos = get_center_points(list(map(lambda x: x.position, objects)))
         else:
             pos = Vector3.zero()
-        super(ObjectGroup, self).__init__(pos)
+        self._position = pos
+        super(ObjectGroup, self).__init__(None)
         self.objects = objects
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, position: Vector3):
+        if position is None:
+            return
+        offset = position - self._position
+        for obj in self.objects:
+            obj.position = obj.position + offset
 
 
 class ObjectRotateGroup(ObjectGroup):
@@ -76,8 +87,21 @@ class Points(Object):
             pos = get_center_points(self.vertexes)
         else:
             pos = Vector3.zero()
-        super(Points, self).__init__(pos)
+        self._position = pos
+        super(Points, self).__init__(None)
         self.color = color
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, position: Vector3):
+        if position is None:
+            return
+        offset = position - self._position
+        for vertex in self.vertexes:
+            vertex += offset
 
     def draw(self, surface, lst_pos2d_light):
         for pos2d_light in lst_pos2d_light:
@@ -145,6 +169,9 @@ class Line(Points):
                          lst_pos2d_light[0][0], lst_pos2d_light[1][0], width=self.width)
 
 
+
+
+
 class _Line(Object):
     width = 3
 
@@ -170,8 +197,47 @@ class SystemCoord(ObjectGroup):
             Point(Vector3(0, size, 0), WHITE),
             Point(Vector3(0, 0, size), WHITE),
             Point(position, self.color),
-
         ])
+
+
+class Power1Vector(Line):
+    def __init__(self, position, cof: int, power=Vector3(1, 1, 1), color=RED):
+        self._power = Vector3(power)
+        self.cof = cof
+        super().__init__(position, position + power * self.cof, color)
+
+    @property
+    def power(self):
+        return self._power
+
+    @power.setter
+    def power(self, power):
+        self._power = power
+        self.vertexes[1] = self.vertexes[0] + power * self.cof
+
+
+class Power3Vectors(ObjectGroup):
+    def __init__(self, position, cof: int, power=Vector3(1, 1, 1)):
+        self._power = Vector3(power)
+        self.color = YELLOW
+        self.cof = cof
+        self.linex, self.liney, self.linez = Line(position, position + Vector3(power.x * cof, 0, 0), GREEN), \
+            Line(position, position + Vector3(0, power.y * cof, 0), RED), Line(position,
+                                                                               position + Vector3(0, 0, power.z * cof),
+                                                                               BLUE)
+
+        super(Power3Vectors, self).__init__([self.linex, self.liney, self.linez, Point(position, self.color), ])
+
+    @property
+    def power(self):
+        return self._power
+
+    @power.setter
+    def power(self, power):
+        self._power = power
+        self.linex.vertexes[1].x = self.linex.vertexes[0].x + power.x * self.cof
+        self.liney.vertexes[1].y = self.linex.vertexes[0].y + power.y * self.cof
+        self.linez.vertexes[1].z = self.linex.vertexes[0].z + power.z * self.cof
 
 
 class Wall(ObjectGroup):
@@ -222,6 +288,10 @@ class SkeletonRotate(PointsRotate):
         self.edges = edges
         self.faces = faces
         super(SkeletonRotate, self).__init__(vertexes, rotation, color)
+
+    def copy(self):
+        obj = self.__class__(self.vertexes, self.edges, self.faces, self.rotation, self.color)
+        return obj
 
     def draw(self, surface, lst_pos2d_light):
         i = 0
