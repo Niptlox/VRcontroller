@@ -1,9 +1,8 @@
 import pygame as pg
 from pygame.locals import *
 
-pg.init()
 EXIT = 0
-DESKTOP_SIZE = pg.display.get_desktop_sizes()[0]
+
 
 class App:
     def __init__(self, screen, scene=None, fps=30):

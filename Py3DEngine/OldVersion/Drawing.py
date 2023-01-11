@@ -3,7 +3,7 @@ import math
 from numba import njit
 import pygame as pg
 
-from Py3DEngine.settings import *
+from settings import *
 
 
 @njit(fastmath=True)

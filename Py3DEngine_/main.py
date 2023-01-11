@@ -6,9 +6,9 @@ import math
 
 # from pygame.math import Vector3
 
-from Py3DEngine.ObjReader import open_file_obj
-from Py3DEngine.settings import *
-from Py3DEngine.Drawing import *
+from Py3DEngine_.ObjReader import open_file_obj
+from Py3DEngine_.settings import *
+from Py3DEngine_.Drawing import *
 
 WINDOW_RECT = pg.Rect((-W_WIDTH, -W_HEIGHT), (W_WIDTH * 3, W_HEIGHT * 3))
 
